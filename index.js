@@ -13,6 +13,21 @@ wss.on("connection", (ws, request) => {
         code2ws.set(code, ws);
         ws.sendData("resCode", { code });
         break;
+      case "connect":
+        let remoteCode = +data.remoteCode;
+        if (code2ws.has(remoteCode)) {
+          let remoteWS = code2ws.get(remoteCode);
+          ws.sendRemote = remoteWS.sendData;
+          remoteWS.sendRemote = ws.sendData;
+          ws.sendData("operate", { remoteCode, label: data.label });
+          ws.sendRemote("receive", { remoteCode: code, label: data.label });
+        } else {
+          ws.sendData("notFound");
+        }
+        break;
+      case "forward":
+        ws.sendRemote(data.event, data.data);
+        break;
     }
   });
   ws.on("close", () => {
